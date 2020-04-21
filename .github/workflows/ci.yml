@@ -1,0 +1,29 @@
+name: GitHub CI
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: 0 0 * * 0
+
+jobs:
+
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      strategy: ${{ steps.generate.outputs.strategy }}
+      meta: ${{ steps.generate.outputs.meta }}
+    steps:
+      - uses: actions/checkout@v1
+      - id: generate
+        name: 'Generate'
+        run: |
+          # TODO git clone --depth 1 https://github.com/docker-library/official-images.git ~/oi
+          .github/workflows/generate.sh
+
+  test:
+    needs: generate
+    strategy: ${{ fromJson(needs.generate.outputs.strategy) }}
+    runs-on: ${{ fromJson(needs.generate.outputs.meta)[matrix.name].os }}
+    defaults: ${{ fromJson(needs.generate.outputs.meta)[matrix.name].defaults }}
+    steps: ${{ fromJson(needs.generate.outputs.meta)[matrix.name].steps }}
